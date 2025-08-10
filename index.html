@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Invitados</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8fafc;
+        }
+        
+        .status-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .status-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .attending {
+            background-color: #10b981 !important;
+            color: white !important;
+        }
+        
+        .not-attending {
+            background-color: #ef4444 !important;
+            color: white !important;
+        }
+        
+        .unknown {
+            background-color: #f59e0b !important;
+            color: white !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-indigo-700 mb-2">Lista de Invitados</h1>
+            <p class="text-lg text-gray-600">Confirma tu asistencia seleccionando una opción</p>
+        </header>
+        
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
+            <div class="bg-indigo-600 px-6 py-4">
+                <h2 class="text-xl font-semibold text-white">Invitados</h2>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Confirmación</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="guest-list">
+                        <!-- Los invitados se agregarán aquí dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="flex justify-center gap-4 mb-8">
+            <div class="flex items-center">
+                <div class="w-4 h-4 bg-green-500 rounded-full mr-2"></div>
+                <span class="text-sm text-gray-700">Asistirán</span>
+            </div>
+            <div class="flex items-center">
+                <div class="w-4 h-4 bg-red-500 rounded-full mr-2"></div>
+                <span class="text-sm text-gray-700">No asistirán</span>
+            </div>
+            <div class="flex items-center">
+                <div class="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
+                <span class="text-sm text-gray-700">No saben</span>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Resumen de confirmaciones</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-green-50 p-4 rounded-lg">
+                    <p class="text-green-800 font-medium">Asistirán: <span id="attending-count" class="text-2xl">0</span></p>
+                </div>
+                <div class="bg-red-50 p-4 rounded-lg">
+                    <p class="text-red-800 font-medium">No asistirán: <span id="not-attending-count" class="text-2xl">0</span></p>
+                </div>
+                <div class="bg-yellow-50 p-4 rounded-lg">
+                    <p class="text-yellow-800 font-medium">No saben: <span id="unknown-count" class="text-2xl">0</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const guests = [
+                "Andres Zabaleta",
+                "Dante Jauma",
+                "Felipe Olivera",
+                "Juan Varesko",
+                "Manuel Sollosqui",
+                "Martiniano Corral",
+                "Maximo Etetiti",
+                "Owen Chen",
+                "Ramiro Dania",
+                "Santiago Curcio",
+                "Santiago Fajre",
+                "Lucas Estanicia",
+                "Donato Vespoli",
+                "Tomas Zanelo",
+                "Nacho Pap",
+                "Santiago",
+                "Juan Francisco",
+                "Juan Bautista",
+                "Mateo",
+                "Benjamin Maggiore",
+                "Alma Maggiore",
+                "Francisco",
+                "Juliana"
+            ];
+            
+            const guestList = document.getElementById('guest-list');
+            const attendingCount = document.getElementById('attending-count');
+            const notAttendingCount = document.getElementById('not-attending-count');
+            const unknownCount = document.getElementById('unknown-count');
+            
+            let attending = 0;
+            let notAttending = 0;
+            let unknown = 0;
+            
+            // Cargar datos guardados del localStorage
+            const savedStatus = JSON.parse(localStorage.getItem('guestStatus')) || {};
+            
+            guests.forEach((guest, index) => {
+                const row = document.createElement('tr');
+                row.className = index % 2 === 0 ? 'bg-gray-50' : 'bg-white';
+                
+                const nameCell = document.createElement('td');
+                nameCell.className = 'px-6 py-4 whitespace-nowrap';
+                nameCell.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="w-8 text-gray-500 font-medium">${index + 1}.</div>
+                        <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                            <span class="text-indigo-600 font-medium">${guest.split(' ').map(n => n[0]).join('')}</span>
+                        </div>
+                        <div class="ml-4">
+                            <div class="text-sm font-medium text-gray-900">${guest}</div>
+                        </div>
+                    </div>
+                `;
+                
+                const statusCell = document.createElement('td');
+                statusCell.className = 'px-6 py-4 whitespace-nowrap';
+                
+                const currentStatus = savedStatus[guest] || 'unknown';
+                let statusText = '';
+                let statusClass = '';
+                
+                switch(currentStatus) {
+                    case 'attending':
+                        statusText = 'Asistirá';
+                        statusClass = 'text-green-600 bg-green-100';
+                        attending++;
+                        break;
+                    case 'not-attending':
+                        statusText = 'No asistirá';
+                        statusClass = 'text-red-600 bg-red-100';
+                        notAttending++;
+                        break;
+                    default:
+                        statusText = 'No sabe';
+                        statusClass = 'text-yellow-600 bg-yellow-100';
+                        unknown++;
+                }
+                
+                statusCell.innerHTML = `
+                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
+                        ${statusText}
+                    </span>
+                `;
+                
+                const actionCell = document.createElement('td');
+                actionCell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-500';
+                actionCell.innerHTML = `
+                    <div class="flex space-x-2">
+                        <button onclick="updateStatus('${guest}', 'attending')" class="status-btn px-3 py-1 text-xs rounded-md bg-green-100 text-green-800 hover:bg-green-200 ${currentStatus === 'attending' ? 'attending' : ''}">
+                            <i class="fas fa-check mr-1"></i> Sí
+                        </button>
+                        <button onclick="updateStatus('${guest}', 'not-attending')" class="status-btn px-3 py-1 text-xs rounded-md bg-red-100 text-red-800 hover:bg-red-200 ${currentStatus === 'not-attending' ? 'not-attending' : ''}">
+                            <i class="fas fa-times mr-1"></i> No
+                        </button>
+                        <button onclick="updateStatus('${guest}', 'unknown')" class="status-btn px-3 py-1 text-xs rounded-md bg-yellow-100 text-yellow-800 hover:bg-yellow-200 ${currentStatus === 'unknown' ? 'unknown' : ''}">
+                            <i class="fas fa-question mr-1"></i> No sé
+                        </button>
+                    </div>
+                `;
+                
+                row.appendChild(nameCell);
+                row.appendChild(statusCell);
+                row.appendChild(actionCell);
+                guestList.appendChild(row);
+            });
+            
+            updateCounters();
+            
+            function updateCounters() {
+                attendingCount.textContent = attending;
+                notAttendingCount.textContent = notAttending;
+                unknownCount.textContent = unknown;
+            }
+            
+            window.updateStatus = function(guest, status) {
+                // Actualizar contadores
+                const oldStatus = savedStatus[guest] || 'unknown';
+                
+                // Restar del estado anterior
+                switch(oldStatus) {
+                    case 'attending': attending--; break;
+                    case 'not-attending': notAttending--; break;
+                    default: unknown--;
+                }
+                
+                // Sumar al nuevo estado
+                switch(status) {
+                    case 'attending': attending++; break;
+                    case 'not-attending': notAttending++; break;
+                    default: unknown++;
+                }
+                
+                // Guardar el nuevo estado
+                savedStatus[guest] = status;
+                localStorage.setItem('guestStatus', JSON.stringify(savedStatus));
+                
+                // Recargar la página para actualizar la vista
+                location.reload();
+            };
+        });
+    </script>
+<p style="border-radius: 8px; text-align: center; font-size: 12px; color: #fff; margin-top: 16px;position: fixed; left: 8px; bottom: 8px; z-index: 10; background: rgba(0, 0, 0, 0.8); padding: 4px 8px;">Made with <img src="https://enzostvs-deepsite.hf.space/logo.svg" alt="DeepSite Logo" style="width: 16px; height: 16px; vertical-align: middle;display:inline-block;margin-right:3px;filter:brightness(0) invert(1);"><a href="https://enzostvs-deepsite.hf.space" style="color: #fff;text-decoration: underline;" target="_blank" >DeepSite</a> - 🧬 <a href="https://enzostvs-deepsite.hf.space?remix=maximoamoamoa/invitacion" style="color: #fff;text-decoration: underline;" target="_blank" >Remix</a></p></body>
+</html>
